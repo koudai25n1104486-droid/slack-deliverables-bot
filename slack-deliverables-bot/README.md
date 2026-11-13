@@ -1,5 +1,7 @@
 # 制作物・週次まとめボット（Bolt）
 
+**v0.7.0：好きな時に `@ボット 今週の制作物` と指示して、その時点までの一覧を見られます。** 使い方は **[REPORT.md](REPORT.md)** を参照してください。
+
 **v0.6.1：指定チャンネルの参加者なら、誰でもメンションで投稿曜日・時刻を変更できます。個人IDの登録・卒業時の入れ替えは不要です。** `@ボット 毎週 金曜 18:00` の形式です。追加設定と練習方法は **[SCHEDULE.md](SCHEDULE.md)** を参照してください。
 
 **v0.5.0：チャンネル投稿をメインにして、同じ一覧をCanvasにも追記できます。** 推奨設定は `OUTPUT_MODE=both` です。**[投稿＋Canvasの設定手順](BOTH.md)** を参照してください。Canvas自体の準備は [CANVAS.md](CANVAS.md) に記載しています。
@@ -79,7 +81,7 @@ npm ci --ignore-scripts
 | `chat:write` | 親メッセージと返信の投稿 |
 | `pins:write` | 親メッセージのピン留め |
 | `canvases:write` | both / canvasモードでのCanvas作成・追記 |
-| `app_mentions:read` | 参加者のメンションによる予定変更を使う場合 |
+| `app_mentions:read` | 参加者のメンションによる予定変更・随時集計を使う場合 |
 
 収集元がプライベートの場合は `channels:history` の代わりに `groups:history` を使います。両方が必要な運用でなければ同時に要求しません。`AUTO_PIN=false` にする場合は `pins:write` を外せます。
 

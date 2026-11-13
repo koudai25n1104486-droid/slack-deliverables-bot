@@ -5,7 +5,7 @@ const DAY = 86400000;
 const JST = 9 * 3600000;
 const DAYS = '日月火水木金土';
 const DEFAULT_SCHEDULE = Object.freeze({ weekday: 1, hour: 9, minute: 0, effectiveFrom: null });
-const HELP = '使い方（日本時間）\n・毎週 金曜 18:00\n・投稿曜日 金曜\n・投稿時刻 18:00\n・設定確認\n変更は次の予定から適用します。同じ週を投稿済みなら再投稿しません。集計は前週の月曜〜日曜です。';
+const HELP = '使い方（日本時間）\n・今週の制作物：今週月曜から現在までを随時集計\n・毎週 金曜 18:00\n・投稿曜日 金曜\n・投稿時刻 18:00\n・設定確認\n予定変更は次の予定から適用します。定期報告の集計は前週の月曜〜日曜です。';
 
 function validateSchedule(value) {
   if (!value || !Number.isInteger(value.weekday) || value.weekday < 0 || value.weekday > 6 ||
@@ -22,6 +22,7 @@ function describeSchedule(value) {
 }
 function parseCommand(text) {
   const cleaned = String(text || '').normalize('NFKC').replace(/<@[A-Z0-9]+>/g, ' ').trim();
+  if (/^(今週の制作物|最新の制作物|今すぐ集計|報告(?:を見せて)?|レポート)$/.test(cleaned)) return { kind: 'report' };
   if (/^(設定確認|スケジュール確認|設定)$/.test(cleaned)) return { kind: 'status' };
   if (/^(ヘルプ|help)$/i.test(cleaned)) return { kind: 'help' };
   const time = '(\\d{1,2})(?::(\\d{2})|時(?:(\\d{1,2})分)?)';
@@ -87,7 +88,7 @@ class ScheduleStore {
 }
 
 function registerScheduleCommands(app, config, { store = new ScheduleStore(config.stateDir), now = () => new Date(),
-  onChange = () => {}, report = error => console.error(safeError(error)) } = {}) {
+  onChange = () => {}, onReport, report = error => console.error(safeError(error)) } = {}) {
   app.event('app_mention', async ({ event, body, client }) => {
     // 指定チャンネルに投稿できる人なら操作できます。利用者ID・本文は記録しません。
     if (!event.user || event.bot_id || event.subtype === 'bot_message' || event.channel !== config.sourceChannel || !config.allowPost) return;
@@ -101,6 +102,11 @@ function registerScheduleCommands(app, config, { store = new ScheduleStore(confi
     try {
       const result = await store.execute(command, eventKey, received);
       if (result.duplicate) return;
+      if (command.kind === 'report') {
+        if (typeof onReport !== 'function') throw new BotError('REPORT_NOT_AVAILABLE', '随時報告の処理を確認してください。');
+        await onReport({ event, client, now: received });
+        return;
+      }
       let text;
       if (command.kind === 'help') text = HELP;
       else if (command.kind === 'invalid_time') text = '時刻は00:00〜23:59で指定してください。設定は変更していません。';

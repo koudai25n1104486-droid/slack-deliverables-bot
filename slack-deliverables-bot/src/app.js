@@ -4,6 +4,7 @@ const { BotError, safeError, startupStep } = require('./errors');
 const { makeRange, runDigest } = require('./digest');
 const { setupChannelCanvas } = require('./canvas');
 const { ScheduleStore, describeSchedule, scheduleIsDue, registerScheduleCommands } = require('./schedule');
+const { OnDemandReporter } = require('./report');
 
 // SDKに渡すロガーはAPI応答やイベントを出力しません。
 const quietLogger = {
@@ -66,7 +67,19 @@ async function main() {
   let lastPeriod;
   const scheduleStore = new ScheduleStore(config.stateDir);
   const initialSchedule = await startupStep('投稿スケジュール', () => scheduleStore.read());
-  if (config.mentionCommandsEnabled) registerScheduleCommands(app, config, { store: scheduleStore, onChange: () => { nextAttempt = 0; } });
+  const onDemandReporter = new OnDemandReporter({ client: app.client, config });
+  if (config.mentionCommandsEnabled) registerScheduleCommands(app, config, {
+    store: scheduleStore,
+    onChange: () => { nextAttempt = 0; },
+    onReport: async ({ event }) => {
+      // 週次処理との書き込みの重なりを避け、同じプロセス内で順番に処理します。
+      while (busy && !stopping) await new Promise(resolve => setTimeout(resolve, 100));
+      if (stopping) return;
+      busy = true;
+      try { await onDemandReporter.run(event); }
+      finally { busy = false; }
+    }
+  });
   // 管理用のapp_mentionだけを購読。制作物は週次の履歴取得で抽出します。
   await startupStep('ボット認証（xoxb）', () => app.init());
   await startupStep('Socket Mode接続（xapp）', () => app.start());
