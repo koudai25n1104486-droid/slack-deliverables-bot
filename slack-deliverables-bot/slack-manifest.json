@@ -1,0 +1,8 @@
+{
+  "display_information": { "name": "制作物週次まとめ", "description": "制作物の元投稿リンクを週次スレッドにまとめます。" },
+  "features": {
+    "bot_user": { "display_name": "制作物まとめ", "always_online": false }
+  },
+  "oauth_config": { "scopes": { "bot": ["channels:history", "chat:write", "pins:write", "canvases:write", "app_mentions:read"] } },
+  "settings": { "socket_mode_enabled": true, "token_rotation_enabled": false, "event_subscriptions": { "bot_events": ["app_mention"] } }
+}
